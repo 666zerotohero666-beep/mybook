@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主色 -->
+    <color name="primary">#FF2442</color>
+    <color name="primary_variant">#E01E37</color>
+    
+    <!-- 辅助色 -->
+    <color name="secondary">#FF6B6B</color>
+    <color name="secondary_variant">#FF5252</color>
+    
+    <!-- 中性色 -->
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#999999</color>
+    
+    <!-- 背景色 -->
+    <color name="background">#F5F5F5</color>
+    <color name="card">#FFFFFF</color>
+    <color name="divider">#E0E0E0</color>
+    
+    <!-- 基础色 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- 状态色 -->
+    <color name="success">#4CAF50</color>
+    <color name="error">#F44336</color>
+    <color name="warning">#FFC107</color>
+    <color name="info">#2196F3</color>
+</resources>

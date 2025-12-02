@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">MyBook</string>
+    <string name="hello_world">Hello World!</string>
+    <string name="post_title">帖子标题</string>
+    <string name="post_content">帖子内容</string>
+    <string name="like">点赞</string>
+    <string name="comment">评论</string>
+    <string name="save">收藏</string>
+    <string name="publish">发布</string>
+    <string name="draft">保存草稿</string>
+    <string name="refresh">刷新</string>
+    <string name="load_more">加载更多</string>
+    <string name="network_error">网络错误，请重试</string>
+    <string name="no_data">暂无数据</string>
+    <string name="retry">重试</string>
+</resources>
