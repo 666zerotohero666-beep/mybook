@@ -33,6 +33,8 @@ public class LocalDataSourceImpl implements LocalDataSource {
     public LocalDataSourceImpl(AppDatabase database) {
         this.postDao = database.postDao();
         this.executor = Executors.newSingleThreadExecutor();
+        
+        // 初始化测试数据已移除，由ViewModel负责生成模拟数据
     }
 
     @Override

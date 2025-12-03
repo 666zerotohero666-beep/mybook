@@ -1,6 +1,7 @@
 package com.mybook.data.repository;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.mybook.data.local.AppDatabase;
 import com.mybook.data.local.LocalDataSource;
@@ -8,6 +9,8 @@ import com.mybook.data.local.LocalDataSourceImpl;
 import com.mybook.data.model.Post;
 import com.mybook.data.remote.RemoteDataSource;
 import com.mybook.data.remote.RemoteDataSourceImpl;
+
+import java.util.ArrayList;
 
 import android.content.Context;
 
@@ -42,7 +45,12 @@ public class PostRepositoryImpl implements PostRepository {
     public PostRepositoryImpl(Context context) {
         // 获取数据库实例
         AppDatabase database = AppDatabase.getInstance(context.getApplicationContext());
-        this.localDataSource = new LocalDataSourceImpl(database);
+        if (database != null) {
+            this.localDataSource = new LocalDataSourceImpl(database);
+        } else {
+            // 数据库初始化失败，使用null作为数据源，后续使用时需要处理null情况
+            this.localDataSource = null;
+        }
         this.remoteDataSource = new RemoteDataSourceImpl();
         this.executor = Executors.newSingleThreadExecutor();
         // 移除构造函数中的网络请求，将网络请求延迟到实际需要时再执行
@@ -70,8 +78,18 @@ public class PostRepositoryImpl implements PostRepository {
 
     @Override
     public LiveData<List<Post>> getPosts() {
-        // 从本地数据源获取帖子列表
-        LiveData<List<Post>> localPosts = localDataSource.getAllPosts();
+        // 从本地数据源获取帖子列表，添加空检查
+        LiveData<List<Post>> localPosts = null;
+        if (localDataSource != null) {
+            try {
+                localPosts = localDataSource.getAllPosts();
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 本地数据获取失败，返回空的LiveData
+                return new MutableLiveData<>(new ArrayList<>());
+            }
+        }
+        
         // 同时从远程刷新数据，但添加错误处理
         try {
             refreshPosts();
@@ -79,45 +97,69 @@ public class PostRepositoryImpl implements PostRepository {
             e.printStackTrace();
             // 网络请求失败不会导致应用崩溃
         }
-        return localPosts;
+        
+        return localPosts != null ? localPosts : new MutableLiveData<>(new ArrayList<>());
     }
 
     @Override
     public LiveData<Post> getPostById(String id) {
-        // 优先从本地获取帖子
-        LiveData<Post> localPost = localDataSource.getPostById(id);
+        // 优先从本地获取帖子，添加空检查
+        LiveData<Post> localPost = null;
+        if (localDataSource != null) {
+            try {
+                localPost = localDataSource.getPostById(id);
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 本地数据获取失败，返回空的LiveData
+                return new MutableLiveData<>(null);
+            }
+        }
+        
         // 同时从远程刷新该帖子数据
-        remoteDataSource.getPostById(id, new RemoteDataSource.RemoteCallback<Post>() {
-            public void onSuccess(Post data) {
-                executor.execute(() -> {
-                    localDataSource.savePost(data);
-                });
-            }
+        try {
+            remoteDataSource.getPostById(id, new RemoteDataSource.RemoteCallback<Post>() {
+                public void onSuccess(Post data) {
+                    executor.execute(() -> {
+                        if (localDataSource != null) {
+                            localDataSource.savePost(data);
+                        }
+                    });
+                }
 
-            public void onFailure(Throwable throwable) {
-                // 远程获取失败，使用本地缓存
-                throwable.printStackTrace();
-            }
-        });
-        return localPost;
+                public void onFailure(Throwable throwable) {
+                    // 远程获取失败，使用本地缓存
+                    throwable.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 网络请求失败不会导致应用崩溃
+        }
+        
+        return localPost != null ? localPost : new MutableLiveData<>(null);
     }
 
     public void likePost(String id) {
         // 1. 先更新本地数据（乐观更新）
         executor.execute(() -> {
             // 2. 然后更新远程数据
-            remoteDataSource.likePost(id, new RemoteDataSource.RemoteCallback<Boolean>() {
-                public void onSuccess(Boolean data) {
-                    // 远程更新成功，无需额外操作
-                }
+            try {
+                remoteDataSource.likePost(id, new RemoteDataSource.RemoteCallback<Boolean>() {
+                    public void onSuccess(Boolean data) {
+                        // 远程更新成功，无需额外操作
+                    }
 
-                public void onFailure(Throwable throwable) {
-                    // 远程更新失败，需要回滚本地数据
-                    throwable.printStackTrace();
-                    // 重新从远程获取最新数据并更新本地
-                    refreshPosts();
-                }
-            });
+                    public void onFailure(Throwable throwable) {
+                        // 远程更新失败，需要回滚本地数据
+                        throwable.printStackTrace();
+                        // 重新从远程获取最新数据并更新本地
+                        refreshPosts();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 网络请求失败不会导致应用崩溃
+            }
         });
     }
 
@@ -126,18 +168,23 @@ public class PostRepositoryImpl implements PostRepository {
         // 1. 先更新本地数据（乐观更新）
         executor.execute(() -> {
             // 2. 然后更新远程数据
-            remoteDataSource.commentPost(id, comment, new RemoteDataSource.RemoteCallback<Boolean>() {
-                public void onSuccess(Boolean data) {
-                    // 远程更新成功，无需额外操作
-                }
+            try {
+                remoteDataSource.commentPost(id, comment, new RemoteDataSource.RemoteCallback<Boolean>() {
+                    public void onSuccess(Boolean data) {
+                        // 远程更新成功，无需额外操作
+                    }
 
-                public void onFailure(Throwable throwable) {
-                    // 远程更新失败，需要回滚本地数据
-                    throwable.printStackTrace();
-                    // 重新从远程获取最新数据并更新本地
-                    refreshPosts();
-                }
-            });
+                    public void onFailure(Throwable throwable) {
+                        // 远程更新失败，需要回滚本地数据
+                        throwable.printStackTrace();
+                        // 重新从远程获取最新数据并更新本地
+                        refreshPosts();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 网络请求失败不会导致应用崩溃
+            }
         });
     }
 
@@ -145,18 +192,23 @@ public class PostRepositoryImpl implements PostRepository {
         // 1. 先更新本地数据（乐观更新）
         executor.execute(() -> {
             // 2. 然后更新远程数据
-            remoteDataSource.sharePost(id, new RemoteDataSource.RemoteCallback<Boolean>() {
-                public void onSuccess(Boolean data) {
-                    // 远程更新成功，无需额外操作
-                }
+            try {
+                remoteDataSource.sharePost(id, new RemoteDataSource.RemoteCallback<Boolean>() {
+                    public void onSuccess(Boolean data) {
+                        // 远程更新成功，无需额外操作
+                    }
 
-                public void onFailure(Throwable throwable) {
-                    // 远程更新失败，需要回滚本地数据
-                    throwable.printStackTrace();
-                    // 重新从远程获取最新数据并更新本地
-                    refreshPosts();
-                }
-            });
+                    public void onFailure(Throwable throwable) {
+                        // 远程更新失败，需要回滚本地数据
+                        throwable.printStackTrace();
+                        // 重新从远程获取最新数据并更新本地
+                        refreshPosts();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 网络请求失败不会导致应用崩溃
+            }
         });
     }
 }

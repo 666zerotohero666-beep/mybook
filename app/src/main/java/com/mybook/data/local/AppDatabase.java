@@ -33,13 +33,19 @@ public abstract class AppDatabase extends RoomDatabase {
      */
     public static synchronized AppDatabase getInstance(Context context) {
         if (instance == null) {
-            instance = Room.databaseBuilder(
-                    context.getApplicationContext(),
-                    AppDatabase.class,
-                    "mybook_database"
-            )
-                    .fallbackToDestructiveMigration() // 数据库版本更新时销毁旧数据库
-                    .build();
+            try {
+                instance = Room.databaseBuilder(
+                        context.getApplicationContext(),
+                        AppDatabase.class,
+                        "mybook_database"
+                )
+                        .fallbackToDestructiveMigration() // 数据库版本更新时销毁旧数据库
+                        .build();
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 数据库初始化失败，instance为null，但应用不会崩溃
+                // 后续使用时需要处理null情况
+            }
         }
         return instance;
     }

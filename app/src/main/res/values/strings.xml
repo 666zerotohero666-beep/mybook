@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">MyBook</string>
     <string name="hello_world">Hello World!</string>
+    <string name="empty_state_message">暂无帖子数据</string>
+    <string name="network_error_message">网络连接失败，请重试</string>
+    <string name="retry_button_text">重试</string>
+    <string name="loading_more">加载中...</string>
+    <string name="no_more_data">没有更多数据了</string>
     <string name="post_title">帖子标题</string>
     <string name="post_content">帖子内容</string>
     <string name="like">点赞</string>
