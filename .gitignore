@@ -84,3 +84,35 @@ jacoco/
 # Crashlytics
 crashlytics.properties
 fabric.properties
+
+# Java heap dump files
+*.hprof
+
+# Test results directory
+test-results/
+
+# Android lint reports
+lint-results.*
+
+# Build output json file
+output.json
+
+# Gradle wrapper jar (optional, can be excluded if needed)
+gradle-wrapper.jar
+
+# Android Studio specific files
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# CI/CD files that might contain secrets (adjust based on your needs)
+# ci.env
+# .github/workflows/.env
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

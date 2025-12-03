@@ -17,7 +17,7 @@ public class MainViewModel extends AndroidViewModel {
 
     public MainViewModel(android.app.Application application) {
         super(application);
-        this.postRepository = new PostRepositoryImpl();
+        this.postRepository = new PostRepositoryImpl(application);
     }
 
     public LiveData<List<Post>> getPosts() {
