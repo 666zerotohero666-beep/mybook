@@ -8,7 +8,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -77,6 +79,21 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
         
         // 初始化重试按钮点击事件
         initRetryButtons();
+        
+        // 初始化底部发布按钮点击事件
+        initPublishButton();
+    }
+    
+    /**
+     * 初始化底部发布按钮点击事件
+     */
+    private void initPublishButton() {
+        // 设置发布按钮点击事件
+        com.google.android.material.floatingactionbutton.FloatingActionButton fabPost = findViewById(R.id.fab_post);
+        fabPost.setOnClickListener(v -> {
+            // 跳转到发布页
+            startActivity(new android.content.Intent(MainActivity.this, com.mybook.ui.post.PostActivity.class));
+        });
     }
 
     /**
@@ -265,8 +282,31 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
      */
     @Override
     public void onPostClick(Post post) {
-        // 这里将在后续实现中添加帖子点击逻辑
-        Toast.makeText(this, "帖子点击：" + post.getId(), Toast.LENGTH_SHORT).show();
+        try {
+            // 添加详细日志
+            Log.d("MainActivity", "onPostClick called");
+            Log.d("MainActivity", "Post object: " + post);
+            Log.d("MainActivity", "Post ID: " + (post != null ? post.getId() : "null"));
+            
+            // 跳转到帖子详情页
+            if (post != null && post.getId() != null) {
+                Log.d("MainActivity", "Creating Intent");
+                Log.d("MainActivity", "PostDetailActivity class: " + com.mybook.ui.post.PostDetailActivity.class);
+                Intent intent = new Intent(MainActivity.this, com.mybook.ui.post.PostDetailActivity.class);
+                Log.d("MainActivity", "Intent created successfully");
+                intent.putExtra(com.mybook.ui.post.PostDetailActivity.EXTRA_POST_ID, post.getId());
+                Log.d("MainActivity", "Put extra EXTRA_POST_ID: " + post.getId());
+                Log.d("MainActivity", "Starting Activity");
+                startActivity(intent);
+                Log.d("MainActivity", "Activity started successfully");
+            } else {
+                Log.d("MainActivity", "Invalid post or postId");
+                Toast.makeText(this, "帖子信息无效", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error in onPostClick", e);
+            Toast.makeText(this, "跳转失败，请重试", Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**

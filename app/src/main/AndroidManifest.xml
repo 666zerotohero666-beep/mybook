@@ -23,6 +23,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.post.PostActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.post.PostDetailActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

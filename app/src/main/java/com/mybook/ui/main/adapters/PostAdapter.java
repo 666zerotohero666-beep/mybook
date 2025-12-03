@@ -207,10 +207,16 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             // 设置帖子图片
             if (post.getImages() != null && !post.getImages().isEmpty()) {
+                // 计算图片宽度（双列瀑布流）
+                int screenWidth = mContext.getResources().getDisplayMetrics().widthPixels;
+                int imageWidth = (screenWidth - mContext.getResources().getDimensionPixelSize(R.dimen.grid_spacing) * 3) / 2;
+                
+                // 使用Glide加载图片并设置自适应高度
                 Glide.with(mContext)
                         .load(post.getImages().get(0))
                         .centerCrop()
                         .placeholder(R.drawable.ic_placeholder_square)
+                        .override(imageWidth) // 设置宽度，高度会根据宽高比自动计算
                         .into(postImage);
             }
 
