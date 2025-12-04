@@ -211,4 +211,32 @@ public class PostRepositoryImpl implements PostRepository {
             }
         });
     }
+
+    @Override
+    public void addPost(Post post) {
+        executor.execute(() -> {
+            // 1. 保存到本地数据源
+            if (localDataSource != null) {
+                localDataSource.savePost(post);
+            }
+            // 2. 保存到远程数据源
+            try {
+                remoteDataSource.addPost(post, new RemoteDataSource.RemoteCallback<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean data) {
+                        // 远程保存成功，无需额外操作
+                    }
+                    
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        // 远程保存失败，记录日志但不影响本地保存
+                        throwable.printStackTrace();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 远程保存失败，记录日志但不影响本地保存
+            }
+        });
+    }
 }

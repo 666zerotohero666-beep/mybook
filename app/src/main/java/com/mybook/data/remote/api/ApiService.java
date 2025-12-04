@@ -52,4 +52,12 @@ public interface ApiService {
      */
     @POST("/posts/{id}/share")
     Call<Void> sharePost(@Path("id") String postId);
+    
+    /**
+     * 添加新帖子
+     * @param post 新帖子对象
+     * @return 添加结果的Call对象
+     */
+    @POST("/posts")
+    Call<Void> addPost(Post post);
 }

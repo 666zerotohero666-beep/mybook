@@ -16,9 +16,11 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.mybook.R;
+import com.mybook.data.model.Comment;
 import com.mybook.data.model.Post;
 import com.mybook.util.ToastUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,8 +49,11 @@ public class PostDetailActivity extends AppCompatActivity {
     private TextView saveCount;
     private EditText commentInput;
     private ImageView sendButton;
+    private androidx.recyclerview.widget.RecyclerView commentsRecyclerView;
     
     private MediaAdapter mediaAdapter;
+    private CommentAdapter commentAdapter;
+    private List<Comment> comments = new ArrayList<>();
 
     private String postId;
     private Post currentPost;
@@ -100,6 +105,7 @@ public class PostDetailActivity extends AppCompatActivity {
         saveCount = findViewById(R.id.save_count);
         commentInput = findViewById(R.id.comment_input);
         sendButton = findViewById(R.id.send_button);
+        commentsRecyclerView = findViewById(R.id.comments_recycler_view);
 
         // 设置顶部栏返回按钮
         setSupportActionBar(toolbar);
@@ -107,6 +113,22 @@ public class PostDetailActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+        
+        // 初始化评论列表
+        initCommentsRecyclerView();
+    }
+    
+    /**
+     * 初始化评论列表
+     */
+    private void initCommentsRecyclerView() {
+        // 创建并设置适配器
+        commentAdapter = new CommentAdapter(comments);
+        commentsRecyclerView.setAdapter(commentAdapter);
+        
+        // 设置布局管理器
+        androidx.recyclerview.widget.LinearLayoutManager layoutManager = new androidx.recyclerview.widget.LinearLayoutManager(this);
+        commentsRecyclerView.setLayoutManager(layoutManager);
     }
 
     /**
@@ -114,7 +136,11 @@ public class PostDetailActivity extends AppCompatActivity {
      */
     private void setClickListeners() {
         // 顶部栏返回按钮点击事件
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> {
+            onBackPressed();
+            // 设置返回过渡动画
+            overridePendingTransition(R.anim.activity_return_enter, R.anim.activity_return_exit);
+        });
 
         // 关注按钮点击事件
         toolbarFollowButton.setOnClickListener(v -> followUser());
@@ -430,6 +456,83 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     /**
+     * 评论适配器类，用于处理RecyclerView的评论展示
+     */
+    private class CommentAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<CommentAdapter.CommentViewHolder> {
+
+        private List<Comment> commentList;
+
+        public CommentAdapter(List<Comment> commentList) {
+            this.commentList = commentList;
+        }
+
+        @Override
+        public CommentViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = getLayoutInflater().inflate(R.layout.item_comment, parent, false);
+            return new CommentViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(CommentViewHolder holder, int position) {
+            Comment comment = commentList.get(position);
+            
+            // 加载用户头像
+            Glide.with(holder.commentAvatar.getContext())
+                    .load(comment.getAvatar() != null ? comment.getAvatar() : "")
+                    .circleCrop()
+                    .placeholder(R.drawable.ic_placeholder_circle)
+                    .error(R.drawable.ic_placeholder_circle)
+                    .into(holder.commentAvatar);
+            
+            // 设置用户名
+            holder.commentName.setText(comment.getName() != null ? comment.getName() : "匿名用户");
+            
+            // 设置评论时间
+            holder.commentTime.setText(formatDate(comment.getCreatedAt() != null ? comment.getCreatedAt() : ""));
+            
+            // 设置评论内容
+            holder.commentContent.setText(comment.getContent() != null ? comment.getContent() : "");
+        }
+
+        @Override
+        public int getItemCount() {
+            return commentList.size();
+        }
+
+        /**
+         * 添加新评论到列表
+         */
+        public void addComment(Comment comment) {
+            commentList.add(comment);
+            notifyItemInserted(commentList.size() - 1);
+        }
+
+        /**
+         * 更新评论列表
+         */
+        public void updateComments(List<Comment> newComments) {
+            commentList.clear();
+            commentList.addAll(newComments);
+            notifyDataSetChanged();
+        }
+
+        public class CommentViewHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
+            ImageView commentAvatar;
+            TextView commentName;
+            TextView commentTime;
+            TextView commentContent;
+
+            public CommentViewHolder(View itemView) {
+                super(itemView);
+                commentAvatar = itemView.findViewById(R.id.comment_avatar);
+                commentName = itemView.findViewById(R.id.comment_name);
+                commentTime = itemView.findViewById(R.id.comment_time);
+                commentContent = itemView.findViewById(R.id.comment_content);
+            }
+        }
+    }
+
+    /**
      * 格式化日期
      * @param dateString ISO格式的日期字符串
      * @return 格式化后的日期字符串
@@ -497,16 +600,43 @@ public class PostDetailActivity extends AppCompatActivity {
             return;
         }
         
-        // 这里简化实现，实际项目中应该调用API发送评论
-        ToastUtil.showShort(this, "评论已发送");
+        // 创建新评论对象
+        String commentId = "comment_" + System.currentTimeMillis();
+        Comment newComment = new Comment(
+                commentId,
+                postId,
+                "user_current",
+                "当前用户",
+                "https://picsum.photos/id/1005/100/100",
+                commentText,
+                "2025-12-04T" + java.time.LocalTime.now().toString() + "Z"
+        );
+        
+        // 添加评论到列表
+        comments.add(newComment);
+        commentAdapter.notifyItemInserted(comments.size() - 1);
+        
+        // 更新评论数量
+        if (currentPost != null) {
+            int newComments = currentPost.getComments() + 1;
+            currentPost.setComments(newComments);
+            commentCount.setText(String.valueOf(newComments));
+        }
+        
+        // 滚动到最新评论
+        commentsRecyclerView.scrollToPosition(comments.size() - 1);
         
         // 清空评论输入框
         commentInput.setText("");
+        
         // 隐藏软键盘
         android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(commentInput.getWindowToken(), 0);
         }
+        
+        // 显示发送成功提示
+        ToastUtil.showShort(this, "评论已发送");
     }
 
     /**
@@ -568,6 +698,8 @@ public class PostDetailActivity extends AppCompatActivity {
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
+        // 设置返回过渡动画
+        overridePendingTransition(R.anim.activity_return_enter, R.anim.activity_return_exit);
         return true;
     }
 }

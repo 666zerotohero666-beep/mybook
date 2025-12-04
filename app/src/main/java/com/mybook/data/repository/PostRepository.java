@@ -12,4 +12,5 @@ public interface PostRepository {
     void likePost(String id);
     void commentPost(String id, String comment);
     void sharePost(String id);
+    void addPost(Post post);
 }

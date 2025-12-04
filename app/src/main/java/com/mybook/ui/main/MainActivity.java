@@ -8,7 +8,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -33,6 +36,17 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
     private List<Post> posts = new ArrayList<>();
     private boolean isLoading = false;
     private boolean hasMore = true;
+    
+    // 广播接收器，用于接收帖子发布成功的广播
+    private BroadcastReceiver refreshPostsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.mybook.ACTION_REFRESH_POSTS".equals(intent.getAction())) {
+                // 接收到广播后刷新帖子列表
+                refreshPosts();
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +79,10 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
         
         // 初始加载数据
         loadPosts();
+        
+        // 注册广播接收器，接收帖子发布成功的广播
+        IntentFilter filter = new IntentFilter("com.mybook.ACTION_REFRESH_POSTS");
+        registerReceiver(refreshPostsReceiver, filter);
     }
 
     /**
@@ -121,6 +139,15 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
                 
                 // 设置适配器的滚动状态
                 postAdapter.setScrolling(newState != RecyclerView.SCROLL_STATE_IDLE);
+                
+                // 滑动时暂停图片加载，停止滚动时恢复加载
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    // 滚动停止，恢复图片加载
+                    com.bumptech.glide.Glide.with(MainActivity.this).resumeRequests();
+                } else {
+                    // 正在滚动，暂停图片加载
+                    com.bumptech.glide.Glide.with(MainActivity.this).pauseRequests();
+                }
                 
                 // 当滚动停止且有更多数据时，加载更多
                 if (!recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
@@ -321,6 +348,8 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
                 Log.d("MainActivity", "Put extra EXTRA_POST_ID: " + post.getId());
                 Log.d("MainActivity", "Starting Activity");
                 startActivity(intent);
+                // 设置页面跳转过渡动画
+                overridePendingTransition(R.anim.activity_enter, R.anim.activity_exit);
                 Log.d("MainActivity", "Activity started successfully");
             } else {
                 Log.d("MainActivity", "Invalid post or postId");
@@ -352,5 +381,12 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
     public void onLoadMore() {
         // 加载更多数据
         loadMorePosts();
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 取消注册广播接收器，避免内存泄漏
+        unregisterReceiver(refreshPostsReceiver);
     }
 }

@@ -43,6 +43,13 @@ public interface RemoteDataSource {
      * @param callback 回调接口，用于处理请求结果
      */
     void sharePost(String postId, RemoteCallback<Boolean> callback);
+    
+    /**
+     * 添加新帖子
+     * @param post 新帖子对象
+     * @param callback 回调接口，用于处理请求结果
+     */
+    void addPost(Post post, RemoteCallback<Boolean> callback);
 
     /**
      * 远程回调接口

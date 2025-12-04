@@ -163,4 +163,29 @@ public class RemoteDataSourceImpl implements RemoteDataSource {
             }
         });
     }
+    
+    @Override
+    public void addPost(Post post, RemoteCallback<Boolean> callback) {
+        // 检查apiService是否为null
+        if (apiService == null) {
+            callback.onFailure(new RuntimeException("ApiService not initialized"));
+            return;
+        }
+        // 发起网络请求
+        apiService.addPost(post).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(true);
+                } else {
+                    callback.onFailure(new RuntimeException("Failed to add post: " + response.message()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onFailure(t);
+            }
+        });
+    }
 }

@@ -278,21 +278,13 @@
                     android:layout_marginLeft="16dp" />
 
                 <!-- 评论列表 -->
-                <LinearLayout
-                    android:id="@+id/comments_layout"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/comments_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- 暂时使用一个TextView表示评论列表 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="评论列表将在后续实现"
-                        android:textColor="@color/gray"
-                        android:gravity="center"
-                        android:padding="32dp" />
-                </LinearLayout>
+                    android:orientation="vertical"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:paddingHorizontal="16dp" />
             </LinearLayout>
         </LinearLayout>
 

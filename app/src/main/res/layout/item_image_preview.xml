@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginRight="8dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/rounded_corner">
+
+    <!-- 图片预览 -->
+    <ImageView
+        android:id="@+id/image_preview"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop"
+        android:background="@color/background" />
+
+    <!-- 删除按钮 -->
+    <ImageView
+        android:id="@+id/btn_remove_image"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_alignTop="@id/image_preview"
+        android:layout_alignRight="@id/image_preview"
+        android:layout_margin="4dp"
+        android:src="@drawable/ic_heart"
+        android:background="@color/white"
+        android:padding="4dp"
+        android:tint="@color/gray"
+        android:contentDescription="删除图片"
+        android:clipToOutline="true"
+        android:outlineProvider="background" />
+</RelativeLayout>

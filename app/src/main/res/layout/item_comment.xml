@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingVertical="12dp">
+
+    <!-- 评论内容区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- 用户头像 -->
+        <ImageView
+            android:id="@+id/comment_avatar"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_placeholder_circle"
+            android:scaleType="centerCrop"
+            android:layout_marginRight="12dp"
+            android:contentDescription="用户头像"
+            android:clipToOutline="true"
+            android:outlineProvider="background" />
+
+        <!-- 评论详情 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- 用户名和时间 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/comment_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:layout_marginRight="8dp" />
+
+                <TextView
+                    android:id="@+id/comment_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray" />
+            </LinearLayout>
+
+            <!-- 评论内容 -->
+            <TextView
+                android:id="@+id/comment_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:lineSpacingExtra="4dp"
+                android:maxLines="5"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/background"
+        android:layout_marginLeft="44dp"
+        android:layout_marginTop="12dp" />
+</LinearLayout>

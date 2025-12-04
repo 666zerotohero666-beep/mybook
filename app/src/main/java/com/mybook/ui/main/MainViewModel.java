@@ -19,6 +19,7 @@ public class MainViewModel extends AndroidViewModel {
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private final MutableLiveData<List<Post>> postsLiveData = new MutableLiveData<>();
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private List<Post> allPosts = new ArrayList<>(); // 保存所有帖子数据
 
     public MainViewModel(android.app.Application application) {
         super(application);
@@ -40,10 +41,10 @@ public class MainViewModel extends AndroidViewModel {
             }
             
             // 创建模拟帖子数据
-            List<Post> mockPosts = createMockPosts();
+            allPosts = createMockPosts();
             
             // 更新LiveData
-            postsLiveData.postValue(mockPosts);
+            postsLiveData.postValue(allPosts);
         });
     }
 
@@ -105,9 +106,12 @@ public class MainViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 Thread.sleep(1000);
-                // 使用模拟数据
-                List<Post> mockPosts = createMockPosts();
-                postsLiveData.postValue(mockPosts);
+                // 如果allPosts为空，则重新创建模拟数据
+                if (allPosts.isEmpty()) {
+                    allPosts = createMockPosts();
+                }
+                // 每次调用都更新LiveData，确保新帖子能立即显示
+                postsLiveData.postValue(new ArrayList<>(allPosts));
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 errorMessage.postValue("获取帖子失败：" + e.getMessage());
@@ -117,6 +121,31 @@ public class MainViewModel extends AndroidViewModel {
         });
         
         return postsLiveData;
+    }
+    
+    /**
+     * 添加新帖子
+     * @param post 新帖子对象
+     */
+    public void addPost(Post post) {
+        executor.execute(() -> {
+            try {
+                isLoading.postValue(true);
+                
+                // 添加新帖子到列表开头
+                allPosts.add(0, post);
+                
+                // 更新LiveData，创建新的ArrayList确保数据引用变化，触发UI刷新
+                postsLiveData.postValue(new ArrayList<>(allPosts));
+                
+                // 保存到本地数据库
+                postRepository.addPost(post);
+            } catch (Exception e) {
+                errorMessage.postValue("发布帖子失败：" + e.getMessage());
+            } finally {
+                isLoading.postValue(false);
+            }
+        });
     }
 
     public LiveData<Boolean> getIsLoading() {
