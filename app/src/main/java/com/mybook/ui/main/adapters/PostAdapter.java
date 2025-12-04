@@ -28,11 +28,15 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     // 数据类型常量
     private static final int TYPE_ITEM = 0; // 帖子项
     private static final int TYPE_LOADING = 1; // 加载更多项
+    private static final int TYPE_SKELETON = 2; // 骨架屏项
 
     private List<Post> mPosts;
     private Context mContext;
     private OnPostClickListener mListener;
     private boolean isLoadingMore = false;
+    private boolean isScrolling = false;
+    private boolean isShowingSkeleton = false;
+    private static final int SKELETON_COUNT = 6; // 骨架屏数量
 
     /**
      * 点击事件监听器
@@ -40,8 +44,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public interface OnPostClickListener {
         void onPostClick(Post post);
         void onLikeClick(Post post);
-        void onCommentClick(Post post);
-        void onSaveClick(Post post);
         void onLoadMore();
     }
 
@@ -64,10 +66,14 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             // 创建帖子项ViewHolder
             View view = LayoutInflater.from(mContext).inflate(R.layout.item_post, parent, false);
             return new PostViewHolder(view);
-        } else {
+        } else if (viewType == TYPE_LOADING) {
             // 创建加载更多项ViewHolder
             View view = LayoutInflater.from(mContext).inflate(R.layout.item_loading, parent, false);
             return new LoadingViewHolder(view);
+        } else {
+            // 创建骨架屏项ViewHolder
+            View view = LayoutInflater.from(mContext).inflate(R.layout.item_post_skeleton, parent, false);
+            return new SkeletonViewHolder(view);
         }
     }
 
@@ -82,16 +88,25 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             // 绑定加载更多数据
             LoadingViewHolder loadingViewHolder = (LoadingViewHolder) holder;
             loadingViewHolder.bind();
+        } else if (holder instanceof SkeletonViewHolder) {
+            // 骨架屏不需要绑定数据，只需要显示动画
         }
     }
 
     @Override
     public int getItemCount() {
+        if (isShowingSkeleton) {
+            return SKELETON_COUNT;
+        }
         return mPosts == null ? 0 : mPosts.size() + (isLoadingMore ? 1 : 0);
     }
 
     @Override
     public int getItemViewType(int position) {
+        // 显示骨架屏时返回骨架屏类型
+        if (isShowingSkeleton) {
+            return TYPE_SKELETON;
+        }
         // 最后一项且正在加载更多时，返回加载更多类型
         return (position == mPosts.size() && isLoadingMore) ? TYPE_LOADING : TYPE_ITEM;
     }
@@ -123,6 +138,23 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         mPosts = posts;
         notifyDataSetChanged();
     }
+    
+    /**
+     * 设置骨架屏显示状态
+     * @param isShowingSkeleton 是否显示骨架屏
+     */
+    public void setShowingSkeleton(boolean isShowingSkeleton) {
+        this.isShowingSkeleton = isShowingSkeleton;
+        notifyDataSetChanged();
+    }
+
+    /**
+     * 设置滚动状态
+     * @param isScrolling 是否正在滚动
+     */
+    public void setScrolling(boolean isScrolling) {
+        this.isScrolling = isScrolling;
+    }
 
     /**
      * 帖子项ViewHolder
@@ -130,29 +162,19 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     class PostViewHolder extends RecyclerView.ViewHolder {
         ImageView userAvatar;
         TextView userName;
-        TextView postTime;
         TextView postContent;
         ImageView postImage;
         ImageView likeButton;
         TextView likeCount;
-        ImageView commentButton;
-        TextView commentCount;
-        ImageView saveButton;
-        TextView saveCount;
 
         PostViewHolder(@NonNull View itemView) {
             super(itemView);
             userAvatar = itemView.findViewById(R.id.user_avatar);
             userName = itemView.findViewById(R.id.user_name);
-            postTime = itemView.findViewById(R.id.post_time);
             postContent = itemView.findViewById(R.id.post_content);
             postImage = itemView.findViewById(R.id.post_image);
             likeButton = itemView.findViewById(R.id.like_button);
             likeCount = itemView.findViewById(R.id.like_count);
-            commentButton = itemView.findViewById(R.id.comment_button);
-            commentCount = itemView.findViewById(R.id.comment_count);
-            saveButton = itemView.findViewById(R.id.save_button);
-            saveCount = itemView.findViewById(R.id.save_count);
 
             // 设置点击事件
             itemView.setOnClickListener(v -> {
@@ -166,20 +188,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && mListener != null) {
                     mListener.onLikeClick(mPosts.get(position));
-                }
-            });
-
-            commentButton.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION && mListener != null) {
-                    mListener.onCommentClick(mPosts.get(position));
-                }
-            });
-
-            saveButton.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION && mListener != null) {
-                    mListener.onSaveClick(mPosts.get(position));
                 }
             });
         }
@@ -199,9 +207,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             // 设置用户名
             userName.setText(post.getName());
 
-            // 设置发布时间
-            postTime.setText(formatDate(post.getCreatedAt()));
-
             // 设置帖子内容
             postContent.setText(post.getContent());
 
@@ -212,25 +217,37 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 int imageWidth = (screenWidth - mContext.getResources().getDimensionPixelSize(R.dimen.grid_spacing) * 3) / 2;
                 
                 // 使用Glide加载图片并设置自适应高度
-                Glide.with(mContext)
-                        .load(post.getImages().get(0))
+                // 滚动时加载低分辨率图片，停止滚动时加载高分辨率图片
+                com.bumptech.glide.request.RequestOptions options = new com.bumptech.glide.request.RequestOptions()
                         .centerCrop()
                         .placeholder(R.drawable.ic_placeholder_square)
-                        .override(imageWidth) // 设置宽度，高度会根据宽高比自动计算
+                        .override(imageWidth);
+                
+                if (isScrolling) {
+                    // 滚动时加载缩略图，提高滚动流畅度
+                    options = options.diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                            .skipMemoryCache(false);
+                } else {
+                    // 停止滚动时加载高质量图片
+                    options = options.diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                            .skipMemoryCache(false);
+                }
+                
+                Glide.with(mContext)
+                        .load(post.getImages().get(0))
+                        .apply(options)
                         .into(postImage);
             }
 
             // 设置点赞数量
             likeCount.setText(String.valueOf(post.getLikes()));
 
-            // 设置评论数量
-            commentCount.setText(String.valueOf(post.getComments()));
-
-            // 设置收藏数量
-            saveCount.setText(String.valueOf(post.getShares()));
-
             // 设置点赞状态
-            likeButton.setImageResource(post.isLiked() ? R.drawable.ic_placeholder_circle : R.drawable.ic_placeholder_circle);
+            if (post.isLiked()) {
+                likeButton.setImageResource(R.drawable.ic_heart_filled);
+            } else {
+                likeButton.setImageResource(R.drawable.ic_heart);
+            }
         }
 
         /**
@@ -273,6 +290,15 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (mListener != null) {
                 mListener.onLoadMore();
             }
+        }
+    }
+    
+    /**
+     * 骨架屏项ViewHolder
+     */
+    class SkeletonViewHolder extends RecyclerView.ViewHolder {
+        SkeletonViewHolder(@NonNull View itemView) {
+            super(itemView);
         }
     }
 }

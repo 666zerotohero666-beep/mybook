@@ -10,16 +10,73 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 顶部栏 -->
+        <!-- 顶部导航栏 -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:background="@color/white"
             android:elevation="4dp"
-            app:title="帖子详情"
-            app:titleTextColor="@color/black"
-            app:navigationIcon="@drawable/ic_placeholder_circle" />
+            app:title=""
+            app:navigationIcon="@drawable/ic_back">
+
+            <!-- 顶部导航栏内容 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="16dp">
+
+                <!-- 用户头像 -->
+                <ImageView
+                    android:id="@+id/toolbar_user_avatar"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_placeholder_circle"
+                    android:scaleType="centerCrop"
+                    android:layout_marginRight="8dp"
+                    android:contentDescription="用户头像"
+                    android:clipToOutline="true"
+                    android:outlineProvider="background" />
+
+                <!-- 用户名 -->
+                <TextView
+                    android:id="@+id/toolbar_user_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="用户名"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <!-- 关注按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/toolbar_follow_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="70dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="关注"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    app:cornerRadius="18dp"
+                    app:backgroundTint="@color/primary"
+                    android:layout_marginRight="12dp" />
+
+                <!-- 分享按钮 -->
+                <ImageView
+                    android:id="@+id/toolbar_share_button"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_share"
+                    android:contentDescription="分享" />
+            </LinearLayout>
+        </com.google.android.material.appbar.MaterialToolbar>
 
         <!-- 帖子内容区域 -->
         <LinearLayout
@@ -28,43 +85,31 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 用户信息区 -->
+            <!-- 发布时间 -->
+            <TextView
+                android:id="@+id/post_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/gray"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 帖子图片/视频轮播 -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/media_view_pager"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 图片指示器 -->
             <LinearLayout
+                android:id="@+id/image_indicator"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <ImageView
-                    android:id="@+id/user_avatar"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@color/primary"
-                    android:scaleType="centerCrop"
-                    android:layout_marginRight="12dp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/user_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/post_time"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
+                android:gravity="center"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
             </LinearLayout>
 
             <!-- 帖子标题 -->
@@ -85,84 +130,133 @@
                 android:lineSpacingExtra="8dp"
                 android:layout_marginBottom="16dp" />
 
-            <!-- 帖子图片 -->
-            <ImageView
-                android:id="@+id/post_image"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scaleType="centerCrop"
-                android:layout_marginBottom="16dp" />
-
-            <!-- 互动按钮区 -->
+                <!-- 底部功能栏 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:paddingVertical="16dp"
-                android:background="@drawable/border_top_bottom">
-
+                android:orientation="vertical"
+                android:background="@color/white">
+                
+                <!-- 底部交互区 -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="horizontal"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:paddingVertical="12dp"
+                    android:background="@color/white"
+                    android:layout_marginBottom="8dp">
 
-                    <ImageView
+                    <!-- 点赞功能 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
                         android:id="@+id/like_button"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:background="@color/gray"
-                        android:layout_marginRight="8dp" />
+                        android:src="@drawable/ic_heart"
+                        android:layout_marginRight="4dp" />
 
-                    <TextView
-                        android:id="@+id/like_count"
-                        android:layout_width="wrap_content"
+                        <TextView
+                            android:id="@+id/like_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:text="0"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                    <!-- 收藏功能 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal"
-                    android:gravity="center">
+                        <ImageView
+                        android:id="@+id/save_button"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_star"
+                        android:layout_marginRight="4dp" />
 
-                    <ImageView
+                        <TextView
+                            android:id="@+id/save_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:text="0"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                    <!-- 评论功能 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <ImageView
                         android:id="@+id/comment_button"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:background="@color/gray"
-                        android:layout_marginRight="8dp" />
+                        android:src="@drawable/ic_comment"
+                        android:layout_marginRight="4dp" />
 
-                    <TextView
-                        android:id="@+id/comment_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/comment_count"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:text="0"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
                 </LinearLayout>
-
+                
+                <!-- 评论输入框 -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="horizontal"
-                    android:gravity="center">
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:background="@drawable/border_top_bottom">
+
+                    <EditText
+                        android:id="@+id/comment_input"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="说点什么..."
+                        android:textSize="14sp"
+                        android:paddingVertical="10dp"
+                        android:paddingHorizontal="16dp"
+                        android:background="@drawable/rounded_corner"
+                        android:backgroundTint="@color/background"
+                        android:maxLines="1"
+                        android:inputType="text"
+                        android:imeOptions="actionSend" />
 
                     <ImageView
-                        android:id="@+id/share_button"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:background="@color/gray"
-                        android:layout_marginRight="8dp" />
-
-                    <TextView
-                        android:id="@+id/share_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="14sp" />
+                        android:id="@+id/send_button"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_placeholder_circle"
+                        android:layout_marginLeft="12dp"
+                        android:contentDescription="发送"
+                        android:background="@color/primary"
+                        android:padding="8dp"
+                        android:tint="@color/white"
+                        android:clipToOutline="true"
+                        android:outlineProvider="background" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -171,7 +265,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingVertical="16dp">
+                android:paddingVertical="16dp"
+                android:background="@color/white">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -179,7 +274,8 @@
                     android:text="评论"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="16dp"
+                    android:layout_marginLeft="16dp" />
 
                 <!-- 评论列表 -->
                 <LinearLayout

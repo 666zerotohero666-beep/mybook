@@ -57,11 +57,14 @@ public class MainViewModel extends AndroidViewModel {
         // 创建10条模拟帖子
         for (int i = 0; i < 10; i++) {
             List<String> images = new ArrayList<>();
-            // 为每个帖子添加不同高度的图片
-            if (i % 2 == 0) {
-                images.add("https://picsum.photos/id/" + (i + 1) + "/600/800");
-            } else {
-                images.add("https://picsum.photos/id/" + (i + 1) + "/600/1200");
+            // 为每个帖子添加多张图片，用于测试图片翻页效果
+            int imageCount = 1 + (i % 3); // 每个帖子有1-3张图片
+            for (int j = 0; j < imageCount; j++) {
+                if (i % 2 == 0) {
+                    images.add("https://picsum.photos/id/" + (i * 5 + j + 1) + "/600/800");
+                } else {
+                    images.add("https://picsum.photos/id/" + (i * 5 + j + 1) + "/600/1200");
+                }
             }
             
             Post post = new Post(
@@ -79,6 +82,9 @@ public class MainViewModel extends AndroidViewModel {
                     500 + i,
                     100 + i,
                     i % 3 == 0, // 每3个帖子有一个已点赞
+                    i % 4 == 0, // 每4个帖子有一个已关注
+                    i % 5 == 0, // 每5个帖子有一个已收藏
+                    200 + i, // 收藏数
                     "2025-12-04T12:0" + i + ":00Z"
             );
             
@@ -124,6 +130,19 @@ public class MainViewModel extends AndroidViewModel {
     public void likePost(String postId) {
         try {
             isLoading.setValue(true);
+            // 模拟点赞操作，更新本地数据
+            List<Post> currentPosts = postsLiveData.getValue();
+            if (currentPosts != null) {
+                for (Post post : currentPosts) {
+                    if (post.getId().equals(postId)) {
+                        post.setLiked(!post.isLiked());
+                        post.setLikes(post.getLikes() + (post.isLiked() ? 1 : -1));
+                        break;
+                    }
+                }
+                // 更新LiveData
+                postsLiveData.setValue(new ArrayList<>(currentPosts));
+            }
             postRepository.likePost(postId);
         } catch (Exception e) {
             errorMessage.setValue("点赞失败：" + e.getMessage());

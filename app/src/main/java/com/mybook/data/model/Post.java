@@ -29,6 +29,9 @@ public class Post {
     private int comments;
     private int shares;
     private boolean isLiked;
+    private boolean isFollowing;
+    private boolean isSaved;
+    private int saves;
     private String createdAt;
 
     public Post() {
@@ -39,7 +42,7 @@ public class Post {
      */
     @Ignore
     public Post(String id, String userId, String name, String avatar, String bio, int followers, int following, 
-                String content, List<String> images, int likes, int comments, int shares, boolean isLiked, String createdAt) {
+                String content, List<String> images, int likes, int comments, int shares, boolean isLiked, boolean isFollowing, boolean isSaved, int saves, String createdAt) {
         this.id = id;
         this.userId = userId;
         this.name = name;
@@ -53,6 +56,9 @@ public class Post {
         this.comments = comments;
         this.shares = shares;
         this.isLiked = isLiked;
+        this.isFollowing = isFollowing;
+        this.isSaved = isSaved;
+        this.saves = saves;
         this.createdAt = createdAt;
     }
 
@@ -60,7 +66,7 @@ public class Post {
      * 从User对象构造Post的辅助构造函数
      */
     @Ignore
-    public Post(String id, User user, String content, List<String> images, int likes, int comments, int shares, boolean isLiked, String createdAt) {
+    public Post(String id, User user, String content, List<String> images, int likes, int comments, int shares, boolean isLiked, boolean isFollowing, boolean isSaved, int saves, String createdAt) {
         this.id = id;
         if (user != null) {
             this.userId = user.getId();
@@ -76,6 +82,9 @@ public class Post {
         this.comments = comments;
         this.shares = shares;
         this.isLiked = isLiked;
+        this.isFollowing = isFollowing;
+        this.isSaved = isSaved;
+        this.saves = saves;
         this.createdAt = createdAt;
     }
 
@@ -183,6 +192,30 @@ public class Post {
         isLiked = liked;
     }
 
+    public boolean isFollowing() {
+        return isFollowing;
+    }
+
+    public void setFollowing(boolean following) {
+        isFollowing = following;
+    }
+
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean saved) {
+        isSaved = saved;
+    }
+
+    public int getSaves() {
+        return saves;
+    }
+
+    public void setSaves(int saves) {
+        this.saves = saves;
+    }
+
     public String getCreatedAt() {
         return createdAt;
     }
@@ -190,4 +223,5 @@ public class Post {
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
+
 }

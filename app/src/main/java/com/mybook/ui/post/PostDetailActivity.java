@@ -1,18 +1,25 @@
 package com.mybook.ui.post;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.mybook.R;
 import com.mybook.data.model.Post;
+import com.mybook.util.ToastUtil;
+
+import java.util.List;
 
 /**
  * 帖子详情页Activity
@@ -22,18 +29,26 @@ public class PostDetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_ID = "extra_post_id";
 
     private MaterialToolbar toolbar;
-    private ImageView userAvatar;
-    private TextView userName;
+    private ImageView toolbarUserAvatar;
+    private TextView toolbarUserName;
+    private com.google.android.material.button.MaterialButton toolbarFollowButton;
+    private ImageView toolbarShareButton;
+    
     private TextView postTime;
     private TextView postTitle;
     private TextView postContent;
-    private ImageView postImage;
+    private androidx.viewpager2.widget.ViewPager2 mediaViewPager;
+    private LinearLayout imageIndicator;
     private ImageView likeButton;
     private TextView likeCount;
     private ImageView commentButton;
     private TextView commentCount;
-    private ImageView shareButton;
-    private TextView shareCount;
+    private ImageView saveButton;
+    private TextView saveCount;
+    private EditText commentInput;
+    private ImageView sendButton;
+    
+    private MediaAdapter mediaAdapter;
 
     private String postId;
     private Post currentPost;
@@ -57,7 +72,7 @@ public class PostDetailActivity extends AppCompatActivity {
             loadPostDetail();
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "页面初始化失败，请返回重试", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "页面初始化失败，请返回重试");
             finish();
         }
     }
@@ -67,18 +82,24 @@ public class PostDetailActivity extends AppCompatActivity {
      */
     private void initUI() {
         toolbar = findViewById(R.id.toolbar);
-        userAvatar = findViewById(R.id.user_avatar);
-        userName = findViewById(R.id.user_name);
+        toolbarUserAvatar = findViewById(R.id.toolbar_user_avatar);
+        toolbarUserName = findViewById(R.id.toolbar_user_name);
+        toolbarFollowButton = findViewById(R.id.toolbar_follow_button);
+        toolbarShareButton = findViewById(R.id.toolbar_share_button);
+        
         postTime = findViewById(R.id.post_time);
         postTitle = findViewById(R.id.post_title);
         postContent = findViewById(R.id.post_content);
-        postImage = findViewById(R.id.post_image);
+        mediaViewPager = findViewById(R.id.media_view_pager);
+        imageIndicator = findViewById(R.id.image_indicator);
         likeButton = findViewById(R.id.like_button);
         likeCount = findViewById(R.id.like_count);
         commentButton = findViewById(R.id.comment_button);
         commentCount = findViewById(R.id.comment_count);
-        shareButton = findViewById(R.id.share_button);
-        shareCount = findViewById(R.id.share_count);
+        saveButton = findViewById(R.id.save_button);
+        saveCount = findViewById(R.id.save_count);
+        commentInput = findViewById(R.id.comment_input);
+        sendButton = findViewById(R.id.send_button);
 
         // 设置顶部栏返回按钮
         setSupportActionBar(toolbar);
@@ -95,14 +116,32 @@ public class PostDetailActivity extends AppCompatActivity {
         // 顶部栏返回按钮点击事件
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
+        // 关注按钮点击事件
+        toolbarFollowButton.setOnClickListener(v -> followUser());
+
         // 点赞按钮点击事件
         likeButton.setOnClickListener(v -> likePost());
 
         // 评论按钮点击事件
         commentButton.setOnClickListener(v -> commentPost());
 
+        // 收藏按钮点击事件
+        saveButton.setOnClickListener(v -> savePost());
+        
         // 分享按钮点击事件
-        shareButton.setOnClickListener(v -> sharePost());
+        toolbarShareButton.setOnClickListener(v -> sharePost());
+        
+        // 发送评论按钮点击事件
+        sendButton.setOnClickListener(v -> sendComment());
+        
+        // 评论输入框发送事件
+        commentInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                sendComment();
+                return true;
+            }
+            return false;
+        });
     }
 
     /**
@@ -121,14 +160,14 @@ public class PostDetailActivity extends AppCompatActivity {
     private void loadPostDetail() {
         try {
             // 这里简化实现，实际项目中应该根据帖子ID从服务器或本地数据库获取帖子详情
-            // 暂时使用模拟数据
+            // 暂时使用模拟数据，但确保ID与传入ID一致
             currentPost = createMockPost();
             
             // 展示帖子详情
             displayPostDetail(currentPost);
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "加载帖子详情失败", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "加载帖子详情失败");
             // 显示默认数据或返回
         }    
     }
@@ -138,22 +177,44 @@ public class PostDetailActivity extends AppCompatActivity {
      * @return 模拟帖子对象
      */
     private Post createMockPost() {
-        // 创建一个模拟帖子对象
+        // 解析帖子ID，生成对应的模拟数据
+        int postIndex = 0;
+        if (postId != null && postId.startsWith("post_")) {
+            try {
+                postIndex = Integer.parseInt(postId.replace("post_", ""));
+            } catch (NumberFormatException e) {
+                postIndex = 0;
+            }
+        }
+        
+        // 创建多张图片列表
+        java.util.List<String> images = new java.util.ArrayList<>();
+        // 根据帖子索引生成1-3张图片
+        int imageCount = 1 + (postIndex % 3);
+        for (int i = 0; i < imageCount; i++) {
+            images.add("https://picsum.photos/id/" + (postIndex * 5 + i + 1) + "/600/" + (800 + (i * 200)));
+        }
+        
+        // 创建一个模拟帖子对象，内容与首页保持一致
         return new Post(
                 postId != null ? postId : "post_001",
-                "user_001",
-                "测试用户",
-                "https://picsum.photos/id/1/100/100",
-                "这是一个测试用户的简介",
-                100,
-                50,
-                "这是一个测试帖子的标题",
-                java.util.Arrays.asList("https://picsum.photos/id/1/600/800"),
-                1000,
-                500,
-                100,
-                false,
-                "2025-12-04T12:00:00Z"
+                "user_" + postIndex,
+                "用户" + postIndex,
+                "https://picsum.photos/id/" + (postIndex + 1) + "/100/100",
+                "这是用户" + postIndex + "的简介",
+                100 + postIndex,
+                50 + postIndex,
+                "这是第" + postIndex + "条帖子的内容，用于测试瀑布流布局和详情页展示。" +
+                        "内容长度适中，确保能够在UI上正常显示。",
+                images,
+                1000 + postIndex,
+                500 + postIndex,
+                100 + postIndex,
+                postIndex % 3 == 0, // 每3个帖子有一个已点赞
+                postIndex % 4 == 0, // 每4个帖子有一个已关注
+                postIndex % 5 == 0, // 每5个帖子有一个已收藏
+                200 + postIndex, // 收藏数
+                "2025-12-04T12:0" + (postIndex % 10) + ":00Z"
         );
     }
 
@@ -167,24 +228,40 @@ public class PostDetailActivity extends AppCompatActivity {
         }
 
         try {
-            // 加载用户头像
-            if (userAvatar != null) {
+            // 加载用户头像 - 顶部工具栏
+            if (toolbarUserAvatar != null) {
                 Glide.with(this)
                         .load(post.getAvatar() != null ? post.getAvatar() : "")
                         .circleCrop()
                         .placeholder(R.drawable.ic_placeholder_circle)
                         .error(R.drawable.ic_placeholder_circle)
-                        .into(userAvatar);
+                        .into(toolbarUserAvatar);
             }
 
-            // 设置用户名
-            if (userName != null) {
-                userName.setText(post.getName() != null ? post.getName() : "未知用户");
+            // 设置用户名 - 顶部工具栏
+            if (toolbarUserName != null) {
+                toolbarUserName.setText(post.getName() != null ? post.getName() : "未知用户");
             }
 
             // 设置发布时间
             if (postTime != null) {
                 postTime.setText(formatDate(post.getCreatedAt() != null ? post.getCreatedAt() : ""));
+            }
+
+            // 设置关注状态 - 顶部工具栏
+            if (toolbarFollowButton != null) {
+                if (post.isFollowing()) {
+                    toolbarFollowButton.setText("已关注");
+                    toolbarFollowButton.setStrokeWidth(1);
+                    toolbarFollowButton.setStrokeColor(getResources().getColorStateList(R.color.primary));
+                    toolbarFollowButton.setBackgroundTintList(getResources().getColorStateList(R.color.white));
+                    toolbarFollowButton.setTextColor(getResources().getColorStateList(R.color.primary));
+                } else {
+                    toolbarFollowButton.setText("关注");
+                    toolbarFollowButton.setStrokeWidth(0);
+                    toolbarFollowButton.setBackgroundTintList(getResources().getColorStateList(R.color.primary));
+                    toolbarFollowButton.setTextColor(getResources().getColorStateList(R.color.white));
+                }
             }
 
             // 设置帖子标题
@@ -197,38 +274,158 @@ public class PostDetailActivity extends AppCompatActivity {
                 postContent.setText(post.getContent() != null ? post.getContent() : "");
             }
 
-            // 设置帖子图片
-            if (postImage != null && post.getImages() != null && !post.getImages().isEmpty()) {
-                Glide.with(this)
-                        .load(post.getImages().get(0))
-                        .centerCrop()
-                        .placeholder(R.drawable.ic_placeholder_square)
-                        .error(R.drawable.ic_placeholder_square)
-                        .into(postImage);
+            // 设置媒体内容
+            if (mediaViewPager != null && post.getImages() != null) {
+                List<String> mediaList = post.getImages();
+                if (!mediaList.isEmpty()) {
+                    // 创建并设置适配器
+                    mediaAdapter = new MediaAdapter(mediaList);
+                    mediaViewPager.setAdapter(mediaAdapter);
+                    
+                    // 设置图片指示器
+                    setupImageIndicator(mediaList.size());
+                    
+                    // 设置ViewPager2页面变化监听器
+                    mediaViewPager.registerOnPageChangeCallback(new androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+                        @Override
+                        public void onPageSelected(int position) {
+                            updateImageIndicator(position);
+                        }
+                    });
+                }
             }
 
             // 设置点赞数量
-            if (likeCount != null) {
-                likeCount.setText(String.valueOf(post.getLikes()));
-            }
-
+            likeCount.setText(String.valueOf(post.getLikes()));
+            
             // 设置评论数量
-            if (commentCount != null) {
-                commentCount.setText(String.valueOf(post.getComments()));
+            commentCount.setText(String.valueOf(post.getComments()));
+            
+            // 设置收藏数量
+            saveCount.setText(String.valueOf(post.getSaves()));
+            
+            // 设置收藏状态和图标
+            if (saveButton != null) {
+                if (post.isSaved()) {
+                    saveButton.setImageResource(R.drawable.ic_star_filled);
+                } else {
+                    saveButton.setImageResource(R.drawable.ic_star);
+                }
             }
 
-            // 设置分享数量
-            if (shareCount != null) {
-                shareCount.setText(String.valueOf(post.getShares()));
-            }
-
-            // 设置点赞状态
+            // 设置点赞状态和图标
             if (likeButton != null) {
-                likeButton.setImageResource(post.isLiked() ? R.drawable.ic_placeholder_circle : R.drawable.ic_placeholder_circle);
+                if (post.isLiked()) {
+                    likeButton.setImageResource(R.drawable.ic_heart_filled);
+                } else {
+                    likeButton.setImageResource(R.drawable.ic_heart);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "显示帖子详情失败", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "显示帖子详情失败");
+        }
+    }
+
+    /**
+     * 设置图片指示器
+     * @param count 图片数量
+     */
+    private void setupImageIndicator(int count) {
+        if (imageIndicator == null || count <= 1) {
+            if (imageIndicator != null) {
+                imageIndicator.setVisibility(View.GONE);
+            }
+            return;
+        }
+
+        // 清空现有指示器
+        imageIndicator.removeAllViews();
+        imageIndicator.setVisibility(View.VISIBLE);
+
+        // 创建指示器点
+        for (int i = 0; i < count; i++) {
+            ImageView indicatorDot = new ImageView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    8, 8); // 设置固定大小，缩小至视觉协调的尺寸
+            params.setMargins(4, 0, 4, 0);
+            indicatorDot.setLayoutParams(params);
+            indicatorDot.setImageResource(R.drawable.ic_placeholder_circle);
+            indicatorDot.setColorFilter(ContextCompat.getColor(this, R.color.gray));
+            indicatorDot.setAlpha(0.5f);
+            imageIndicator.addView(indicatorDot);
+        }
+
+        // 默认选中第一个
+        updateImageIndicator(0);
+    }
+
+    /**
+     * 更新图片指示器状态
+     * @param position 当前选中位置
+     */
+    private void updateImageIndicator(int position) {
+        if (imageIndicator == null || imageIndicator.getChildCount() == 0) {
+            return;
+        }
+
+        for (int i = 0; i < imageIndicator.getChildCount(); i++) {
+            ImageView dot = (ImageView) imageIndicator.getChildAt(i);
+            if (i == position) {
+                dot.setColorFilter(ContextCompat.getColor(this, R.color.primary));
+                dot.setAlpha(1.0f);
+                dot.setScaleX(1.2f); // 缩小放大比例，保持视觉协调
+                dot.setScaleY(1.2f);
+            } else {
+                dot.setColorFilter(ContextCompat.getColor(this, R.color.gray));
+                dot.setAlpha(0.5f);
+                dot.setScaleX(1.0f);
+                dot.setScaleY(1.0f);
+            }
+        }
+    }
+
+    /**
+     * 媒体适配器类，用于处理ViewPager2的媒体展示
+     */
+    private class MediaAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<MediaAdapter.MediaViewHolder> {
+
+        private List<String> mediaList;
+
+        public MediaAdapter(List<String> mediaList) {
+            this.mediaList = mediaList;
+        }
+
+        @Override
+        public MediaViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = getLayoutInflater().inflate(R.layout.item_media, parent, false);
+            return new MediaViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(MediaViewHolder holder, int position) {
+            String mediaUrl = mediaList.get(position);
+            // 使用Glide加载图片
+            Glide.with(holder.imageView.getContext())
+                    .load(mediaUrl)
+                    .centerCrop()
+                    .placeholder(R.drawable.ic_placeholder_square)
+                    .error(R.drawable.ic_placeholder_square)
+                    .into(holder.imageView);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mediaList.size();
+        }
+
+        public class MediaViewHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
+            ImageView imageView;
+
+            public MediaViewHolder(View itemView) {
+                super(itemView);
+                imageView = itemView.findViewById(R.id.media_image);
+            }
         }
     }
 
@@ -266,10 +463,14 @@ public class PostDetailActivity extends AppCompatActivity {
             currentPost.setLikes(newLikes);
             
             // 更新UI
+            if (currentPost.isLiked()) {
+                likeButton.setImageResource(R.drawable.ic_heart_filled);
+            } else {
+                likeButton.setImageResource(R.drawable.ic_heart);
+            }
             likeCount.setText(String.valueOf(currentPost.getLikes()));
-            likeButton.setImageResource(currentPost.isLiked() ? R.drawable.ic_placeholder_circle : R.drawable.ic_placeholder_circle);
             
-            Toast.makeText(this, currentPost.isLiked() ? "点赞成功" : "取消点赞", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, currentPost.isLiked() ? "点赞成功" : "取消点赞");
         }
     }
 
@@ -277,8 +478,35 @@ public class PostDetailActivity extends AppCompatActivity {
      * 评论帖子
      */
     private void commentPost() {
-        // 这里简化实现，实际项目中应该跳转到评论页或显示评论输入框
-        Toast.makeText(this, "评论功能将在后续实现", Toast.LENGTH_SHORT).show();
+        // 点击评论按钮，聚焦到评论输入框
+        commentInput.requestFocus();
+        // 显示软键盘
+        android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(commentInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+    
+    /**
+     * 发送评论
+     */
+    private void sendComment() {
+        String commentText = commentInput.getText().toString().trim();
+        if (commentText.isEmpty()) {
+            ToastUtil.showShort(this, "请输入评论内容");
+            return;
+        }
+        
+        // 这里简化实现，实际项目中应该调用API发送评论
+        ToastUtil.showShort(this, "评论已发送");
+        
+        // 清空评论输入框
+        commentInput.setText("");
+        // 隐藏软键盘
+        android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(commentInput.getWindowToken(), 0);
+        }
     }
 
     /**
@@ -286,7 +514,55 @@ public class PostDetailActivity extends AppCompatActivity {
      */
     private void sharePost() {
         // 这里简化实现，实际项目中应该调用系统分享功能
-        Toast.makeText(this, "分享功能将在后续实现", Toast.LENGTH_SHORT).show();
+        ToastUtil.showShort(this, "分享功能将在后续实现");
+    }
+
+    /**
+     * 收藏/取消收藏帖子
+     */
+    private void savePost() {
+        // 这里简化实现，实际项目中应该调用API收藏/取消收藏帖子
+        if (currentPost != null) {
+            currentPost.setSaved(!currentPost.isSaved());
+            int newSaves = currentPost.getSaves() + (currentPost.isSaved() ? 1 : -1);
+            currentPost.setSaves(newSaves);
+            
+            // 更新UI
+            if (currentPost.isSaved()) {
+                saveButton.setImageResource(R.drawable.ic_star_filled);
+            } else {
+                saveButton.setImageResource(R.drawable.ic_star);
+            }
+            saveCount.setText(String.valueOf(currentPost.getSaves()));
+            
+            ToastUtil.showShort(this, currentPost.isSaved() ? "收藏成功" : "取消收藏");
+        }
+    }
+
+    /**
+     * 关注/取消关注用户
+     */
+    private void followUser() {
+        // 这里简化实现，实际项目中应该调用API关注/取消关注用户
+        if (currentPost != null) {
+            currentPost.setFollowing(!currentPost.isFollowing());
+            
+            // 更新关注按钮状态
+            if (currentPost.isFollowing()) {
+                toolbarFollowButton.setText("已关注");
+                toolbarFollowButton.setStrokeWidth(1);
+                toolbarFollowButton.setStrokeColor(getResources().getColorStateList(R.color.primary));
+                toolbarFollowButton.setBackgroundTintList(getResources().getColorStateList(R.color.white));
+                toolbarFollowButton.setTextColor(getResources().getColorStateList(R.color.primary));
+            } else {
+                toolbarFollowButton.setText("关注");
+                toolbarFollowButton.setStrokeWidth(0);
+                toolbarFollowButton.setBackgroundTintList(getResources().getColorStateList(R.color.primary));
+                toolbarFollowButton.setTextColor(getResources().getColorStateList(R.color.white));
+            }
+            
+            ToastUtil.showShort(this, currentPost.isFollowing() ? "关注成功" : "取消关注");
+        }
     }
 
     @Override

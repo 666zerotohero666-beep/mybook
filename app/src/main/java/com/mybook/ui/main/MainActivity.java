@@ -102,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
     private void initRecyclerView() {
         // 创建StaggeredGridLayoutManager，实现双列瀑布流布局
         StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        // 设置gapStrategy为GAP_HANDLING_NONE，确保自然错落感
+        layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
         // 设置布局管理器
         binding.postRecyclerView.setLayoutManager(layoutManager);
         
@@ -111,16 +113,29 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
         // 设置适配器
         binding.postRecyclerView.setAdapter(postAdapter);
         
-        // 设置滚动监听器，实现上拉加载更多
+        // 设置滚动监听器，实现上拉加载更多和滑动时暂停加载
         binding.postRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
+                
+                // 设置适配器的滚动状态
+                postAdapter.setScrolling(newState != RecyclerView.SCROLL_STATE_IDLE);
+                
                 // 当滚动停止且有更多数据时，加载更多
                 if (!recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
                     if (!isLoading && hasMore) {
                         loadMorePosts();
                     }
+                }
+            }
+            
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                // 解决瀑布流布局中出现的空白间隙问题
+                if (dy > 0 || dy < 0) {
+                    layoutManager.invalidateSpanAssignments();
                 }
             }
         });
@@ -160,6 +175,9 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
      */
     private void observePosts() {
         viewModel.getPosts().observe(this, postList -> {
+            // 隐藏骨架屏
+            postAdapter.setShowingSkeleton(false);
+            
             if (postList != null) {
                 posts.clear();
                 posts.addAll(postList);
@@ -212,6 +230,8 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
      * 初始加载数据
      */
     private void loadPosts() {
+        // 显示骨架屏
+        postAdapter.setShowingSkeleton(true);
         viewModel.getPosts();
     }
 
@@ -221,6 +241,9 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
     private void refreshPosts() {
         // 重置加载状态
         hasMore = true;
+        
+        // 显示骨架屏
+        postAdapter.setShowingSkeleton(true);
         
         // 加载数据
         loadPosts();
@@ -320,25 +343,7 @@ public class MainActivity extends AppCompatActivity implements PostAdapter.OnPos
         Toast.makeText(this, "点赞：" + post.getId(), Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * 评论点击事件
-     * @param post 帖子对象
-     */
-    @Override
-    public void onCommentClick(Post post) {
-        // 这里将在后续实现中添加评论点击逻辑
-        Toast.makeText(this, "评论：" + post.getId(), Toast.LENGTH_SHORT).show();
-    }
 
-    /**
-     * 收藏点击事件
-     * @param post 帖子对象
-     */
-    @Override
-    public void onSaveClick(Post post) {
-        // 这里将在后续实现中添加收藏点击逻辑
-        Toast.makeText(this, "收藏：" + post.getId(), Toast.LENGTH_SHORT).show();
-    }
 
     /**
      * 加载更多事件

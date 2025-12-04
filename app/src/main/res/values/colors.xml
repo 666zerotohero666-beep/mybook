@@ -28,5 +28,11 @@
     <color name="success">#4CAF50</color>
     <color name="error">#F44336</color>
     <color name="warning">#FFC107</color>
+    <color name="yellow">#FFC107</color>
     <color name="info">#2196F3</color>
+    <color name="red">#FF2442</color>
+    
+    <!-- 骨架屏颜色 -->
+    <color name="skeleton_color">#E0E0E0</color>
+    <color name="skeleton_color_dark">#BDBDBD</color>
 </resources>

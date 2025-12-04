@@ -15,6 +15,23 @@
         android:background="@color/background"
         tools:context=".ui.main.MainActivity">
 
+        <!-- 顶部应用栏 -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white">
+
+            <!-- 顶部栏 -->
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/white"
+                app:title=""
+                app:popupTheme="@style/ThemeOverlay.Material3.Light">
+            </com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.AppBarLayout>
+
         <!-- 下拉刷新布局 -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh_layout"
@@ -113,12 +130,14 @@
         <!-- 浮动操作按钮 -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_post"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:contentDescription="发布新帖子"
             android:src="@drawable/ic_placeholder_circle"
+            android:backgroundTint="@color/red"
             app:layout_anchor="@id/bottom_app_bar"
-            app:tint="@color/white" />
+            app:tint="@color/white"
+            app:elevation="6dp" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>
